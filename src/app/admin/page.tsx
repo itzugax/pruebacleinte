@@ -43,12 +43,57 @@ export default function AdminPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const ADMIN_PIN = "1234"; // PIN sencillo para el MVP
+
   useEffect(() => {
     setMounted(true);
     setRateInput(store.exchangeRate.toString());
   }, [store.exchangeRate]);
 
   if (!mounted) return null;
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4">
+        <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl shadow-sm border border-zinc-200 dark:border-zinc-800 w-full max-w-sm text-center">
+          <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">🔒</span>
+          </div>
+          <h1 className="text-xl font-black mb-2 text-zinc-900 dark:text-zinc-50">Acceso Restringido</h1>
+          <p className="text-sm text-zinc-500 mb-6">Ingresa el PIN de administrador para entrar al panel de control.</p>
+          <input 
+            type="password" 
+            maxLength={4}
+            value={pinInput}
+            onChange={e => setPinInput(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                if (pinInput === ADMIN_PIN) setIsAuthenticated(true);
+                else { alert("PIN Incorrecto"); setPinInput(""); }
+              }
+            }}
+            className="w-full text-center text-3xl tracking-[0.5em] px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 mb-4 focus:ring-2 focus:ring-zinc-400 focus:outline-none"
+            placeholder="••••"
+          />
+          <button 
+            onClick={() => {
+              if (pinInput === ADMIN_PIN) setIsAuthenticated(true);
+              else { alert("PIN Incorrecto"); setPinInput(""); }
+            }}
+            className="w-full py-3 bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors font-bold rounded-xl"
+          >
+            Entrar
+          </button>
+          
+          <Link href="/" className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 underline mt-6 block transition-colors">
+            Volver a la tienda
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const handleSaveRate = () => {
     const parsed = parseFloat(rateInput);
