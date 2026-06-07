@@ -59,9 +59,17 @@ export default function Header() {
       )}
       <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-white/80 dark:bg-zinc-950/80 border-b border-zinc-200 dark:border-zinc-800 transition-colors">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <h1 className="text-2xl font-black tracking-tighter text-zinc-900 dark:text-zinc-50">
-            Ugax<span className={styles.textHighlight}>Store</span>
-          </h1>
+          <div className="flex items-center gap-3">
+            <img src="/logo.jpg" alt="California Logo" className="w-10 h-10 rounded-lg object-cover" />
+            <div className="flex flex-col">
+              <h1 className="text-xl font-black tracking-tighter text-zinc-900 dark:text-zinc-50 leading-none">
+                California
+              </h1>
+              <span className={`text-[10px] font-bold uppercase tracking-widest ${styles.textHighlight}`}>
+                Surf & Skate Shop
+              </span>
+            </div>
+          </div>
         </div>
       </header>
     </>
