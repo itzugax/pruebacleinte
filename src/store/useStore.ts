@@ -39,7 +39,7 @@ export const useStore = create<StoreState>()(
       })),
     }),
     {
-      name: 'ugax-store-settings-v2',
+      name: 'ugax-store-settings-v3',
     }
   )
 );

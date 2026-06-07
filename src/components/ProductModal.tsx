@@ -14,15 +14,19 @@ export default function ProductModal({
   product: Product;
   onClose: () => void;
 }) {
-  const [selectedSize, setSelectedSize] = useState<string>("M");
-  const sizes = ["S", "M", "L", "XL"];
-  
   const { themeColor, exchangeRate, priceDisplayMode } = useStore();
   const [mounted, setMounted] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string>("");
+
+  const hasSizes = (product.availableSizes && product.availableSizes.length > 0) || 
+                   (product.outOfStockSizes && product.outOfStockSizes.length > 0);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (product.availableSizes && product.availableSizes.length > 0) {
+      setSelectedSize(product.availableSizes[0]);
+    }
+  }, [product]);
 
   const styles = mounted ? getThemeStyles(themeColor) : getThemeStyles('neutral');
 
@@ -36,7 +40,12 @@ export default function ProductModal({
       priceText = `$${product.price} (${(product.price * exchangeRate).toFixed(2)} Bs)`;
     }
     
-    const text = `Hola, me interesa el producto "${product.name}" en talla ${selectedSize}. Precio: ${priceText}`;
+    let text = `Hola, me interesa el producto "${product.name}"`;
+    if (hasSizes) {
+      text += ` en talla ${selectedSize}`;
+    }
+    text += `. Precio: ${priceText}`;
+    
     const url = `https://wa.me/584120000000?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
   };
@@ -82,30 +91,45 @@ export default function ProductModal({
             {product.description}
           </p>
           
-          <div className="mt-6">
-            <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-50 mb-3">
-              Selecciona tu talla
-            </h3>
-            <div className="flex gap-3">
-              {sizes.map((size) => (
-                <button
-                  key={size}
-                  onClick={() => setSelectedSize(size)}
-                  className={`flex-1 h-12 rounded-xl flex items-center justify-center text-sm font-semibold transition-all border-2 ${
-                    selectedSize === size
-                      ? `${styles.border} ${styles.bgLight}`
-                      : "border-transparent bg-zinc-100 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
-                  }`}
-                >
-                  {size}
-                </button>
-              ))}
+          {hasSizes && (
+            <div className="mt-6">
+              <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-50 mb-3">
+                Selecciona tu talla
+              </h3>
+              <div className="flex flex-wrap gap-3">
+                {/* Tallas Disponibles */}
+                {product.availableSizes?.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => setSelectedSize(size)}
+                    className={`flex-1 min-w-[3rem] h-12 rounded-xl flex items-center justify-center text-sm font-semibold transition-all border-2 ${
+                      selectedSize === size
+                        ? `${styles.border} ${styles.bgLight}`
+                        : "border-transparent bg-zinc-100 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+                {/* Tallas Agotadas */}
+                {product.outOfStockSizes?.map((size) => (
+                  <button
+                    key={`out-${size}`}
+                    disabled
+                    className="flex-1 min-w-[3rem] h-12 rounded-xl flex items-center justify-center text-sm font-semibold border-2 border-transparent bg-zinc-50 dark:bg-zinc-900/50 text-zinc-400 dark:text-zinc-600 cursor-not-allowed line-through opacity-60"
+                    title="Agotado"
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           
           <button
             onClick={handleWhatsApp}
-            className={`mt-8 w-full ${styles.bg} ${styles.hoverBg} py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 transition-transform hover:scale-[1.02] active:scale-[0.98] shadow-lg`}
+            disabled={hasSizes && !selectedSize}
+            className={`mt-8 w-full ${styles.bg} ${styles.hoverBg} py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 transition-transform hover:scale-[1.02] active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:hover:scale-100`}
           >
             <MessageCircle className="w-6 h-6" />
             Comprar por WhatsApp

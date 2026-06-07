@@ -24,7 +24,9 @@ export default function AdminPage() {
     category: "",
     price: 0,
     image: "",
-    description: ""
+    description: "",
+    availableSizesStr: "",
+    outOfStockSizesStr: ""
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -70,7 +72,9 @@ export default function AdminPage() {
       category: p.category,
       price: p.price,
       image: p.image,
-      description: p.description
+      description: p.description,
+      availableSizesStr: p.availableSizes ? p.availableSizes.join(", ") : "",
+      outOfStockSizesStr: p.outOfStockSizes ? p.outOfStockSizes.join(", ") : ""
     });
     setImageFile(null);
   };
@@ -110,13 +114,31 @@ export default function AdminPage() {
       setIsUploading(false);
     }
 
-    // Validación básica
     if (!imageUrl) {
       alert("Debes subir una imagen para el producto.");
       return;
     }
 
-    const finalProduct = { ...productForm, image: imageUrl };
+    const availableSizes = productForm.availableSizesStr
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+      
+    const outOfStockSizes = productForm.outOfStockSizesStr
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+
+    const finalProduct: Product = { 
+      id: editingId || "",
+      name: productForm.name,
+      category: productForm.category,
+      price: productForm.price,
+      image: imageUrl,
+      description: productForm.description,
+      ...(availableSizes.length > 0 && { availableSizes }),
+      ...(outOfStockSizes.length > 0 && { outOfStockSizes })
+    };
 
     if (editingId) {
       store.updateProduct(editingId, finalProduct);
@@ -126,7 +148,7 @@ export default function AdminPage() {
     
     setIsEditing(false);
     setEditingId(null);
-    setProductForm({ name: "", category: "", price: 0, image: "", description: "" });
+    setProductForm({ name: "", category: "", price: 0, image: "", description: "", availableSizesStr: "", outOfStockSizesStr: "" });
     setImageFile(null);
   };
 
@@ -240,7 +262,7 @@ export default function AdminPage() {
 
           <div className="space-y-8">
             {/* Gestión de Productos */}
-            <section className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 h-[700px] flex flex-col">
+            <section className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 h-[800px] flex flex-col">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold">Productos</h2>
                 {!isEditing && (
@@ -248,7 +270,7 @@ export default function AdminPage() {
                     onClick={() => {
                       setIsEditing(true);
                       setEditingId(null);
-                      setProductForm({ name: "", category: "", price: 0, image: "", description: "" });
+                      setProductForm({ name: "", category: "", price: 0, image: "", description: "", availableSizesStr: "", outOfStockSizesStr: "" });
                       setImageFile(null);
                     }}
                     className={`px-4 py-2 rounded-lg font-bold flex items-center gap-2 text-sm ${styles.bg} ${styles.hoverBg} transition-all`}
@@ -285,6 +307,22 @@ export default function AdminPage() {
                       </div>
                     </div>
                     
+                    {/* Campos de Tallas */}
+                    <div className="grid grid-cols-2 gap-4 p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
+                      <div className="col-span-2">
+                        <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Gestión de Tallas (Opcional)</p>
+                        <p className="text-[10px] text-zinc-400 mb-2">Si el producto no usa tallas, deja estos campos en blanco.</p>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-green-600 dark:text-green-500 mb-1">Tallas Disponibles</label>
+                        <input value={productForm.availableSizesStr} onChange={e => setProductForm({...productForm, availableSizesStr: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm" placeholder="S, M, 32..." />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-red-500 mb-1">Tallas Agotadas</label>
+                        <input value={productForm.outOfStockSizesStr} onChange={e => setProductForm({...productForm, outOfStockSizesStr: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm" placeholder="L, XL, 34..." />
+                      </div>
+                    </div>
+
                     <div>
                       <label className="block text-xs font-medium text-zinc-500 mb-1">Imagen del Producto</label>
                       <div className="flex gap-2 items-center">
@@ -312,11 +350,11 @@ export default function AdminPage() {
                     
                     <div>
                       <label className="block text-xs font-medium text-zinc-500 mb-1">Descripción</label>
-                      <textarea required value={productForm.description} onChange={e => setProductForm({...productForm, description: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm h-24 resize-none" />
+                      <textarea required value={productForm.description} onChange={e => setProductForm({...productForm, description: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm h-20 resize-none" />
                     </div>
                   </div>
                   
-                  <button type="submit" disabled={isUploading} className={`mt-4 w-full py-3 rounded-lg font-bold flex justify-center items-center gap-2 ${styles.bg} ${styles.hoverBg} transition-colors disabled:opacity-50`}>
+                  <button type="submit" disabled={isUploading} className={`mt-4 w-full py-3 rounded-lg font-bold flex justify-center items-center gap-2 ${styles.bg} ${styles.hoverBg} transition-colors disabled:opacity-50 shrink-0`}>
                     {isUploading ? <RefreshCw className="w-5 h-5 animate-spin" /> : (editingId ? "Guardar Cambios" : "Agregar Producto")}
                   </button>
                 </form>
@@ -342,6 +380,11 @@ export default function AdminPage() {
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-sm truncate text-zinc-900 dark:text-zinc-50">{p.name}</p>
                             <p className="text-xs text-zinc-500">${p.price} • {p.category}</p>
+                            {(p.availableSizes || p.outOfStockSizes) && (
+                              <p className="text-[10px] text-zinc-400 mt-0.5 truncate">
+                                Tallas: {[...(p.availableSizes || []), ...(p.outOfStockSizes || [])].join(", ")}
+                              </p>
+                            )}
                           </div>
                           <div className="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0">
                             <button onClick={() => handleEditProduct(p)} className="p-2 text-zinc-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
