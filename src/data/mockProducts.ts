@@ -21,7 +21,7 @@ export const mockProducts: Product[] = [
     name: "Jean Vintage Slim",
     category: "Jeans",
     price: 45,
-    image: "https://images.unsplash.com/photo-1542272604-780c9685b5bf?q=80&w=600&auto=format&fit=crop",
+    image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?q=80&w=600&auto=format&fit=crop",
     description: "Jean corte slim con lavado vintage. Comodidad y estilo para el día a día."
   },
   {
@@ -93,7 +93,7 @@ export const mockProducts: Product[] = [
     name: "Bolso Tote Canvas",
     category: "Accesorios",
     price: 18,
-    image: "https://images.unsplash.com/photo-1597488950669-026857f6b577?q=80&w=600&auto=format&fit=crop",
+    image: "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?q=80&w=600&auto=format&fit=crop",
     description: "Bolso de tela canvas resistente, excelente para llevar tus cosas del día a día."
   },
   {
@@ -101,7 +101,7 @@ export const mockProducts: Product[] = [
     name: "Pantalón Chino Beige",
     category: "Pantalones",
     price: 35,
-    image: "https://images.unsplash.com/photo-1624378441864-6da7c44eaaf3?q=80&w=600&auto=format&fit=crop",
+    image: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?q=80&w=600&auto=format&fit=crop",
     description: "Pantalón de gabardina corte recto. Elegante y casual al mismo tiempo."
   }
 ];

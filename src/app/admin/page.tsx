@@ -3,9 +3,10 @@
 import { useStore, PriceDisplayMode, ThemeColor } from "@/store/useStore";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Save, Plus, Trash2, Edit2, X, Search, RefreshCw } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Edit2, X, Search, RefreshCw, Upload } from "lucide-react";
 import { getThemeStyles } from "@/lib/theme";
 import { Product } from "@/data/mockProducts";
+import { supabase } from "@/lib/supabase";
 
 export default function AdminPage() {
   const store = useStore();
@@ -25,6 +26,8 @@ export default function AdminPage() {
     image: "",
     description: ""
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -69,6 +72,7 @@ export default function AdminPage() {
       image: p.image,
       description: p.description
     });
+    setImageFile(null);
   };
 
   const handleDeleteProduct = (id: string) => {
@@ -77,16 +81,53 @@ export default function AdminPage() {
     }
   };
 
-  const handleSaveProduct = (e: React.FormEvent) => {
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingId) {
-      store.updateProduct(editingId, productForm);
-    } else {
-      store.addProduct(productForm);
+    
+    let imageUrl = productForm.image;
+
+    // Si el usuario seleccionó un archivo nuevo
+    if (imageFile) {
+      setIsUploading(true);
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('UG_productos_images')
+        .upload(fileName, imageFile);
+
+      if (error) {
+        alert("Error al subir imagen. ¿Creaste el bucket 'UG_productos_images' como público en Supabase? Detalle: " + error.message);
+        setIsUploading(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('UG_productos_images')
+        .getPublicUrl(fileName);
+
+      imageUrl = urlData.publicUrl;
+      setIsUploading(false);
     }
+
+    // Validación básica
+    if (!imageUrl) {
+      alert("Debes subir una imagen para el producto.");
+      return;
+    }
+
+    const finalProduct = { ...productForm, image: imageUrl };
+
+    if (editingId) {
+      store.updateProduct(editingId, finalProduct);
+    } else {
+      store.addProduct(finalProduct);
+    }
+    
     setIsEditing(false);
     setEditingId(null);
     setProductForm({ name: "", category: "", price: 0, image: "", description: "" });
+    setImageFile(null);
   };
 
   const styles = getThemeStyles(store.themeColor);
@@ -204,7 +245,12 @@ export default function AdminPage() {
                 <h2 className="text-xl font-bold">Productos</h2>
                 {!isEditing && (
                   <button 
-                    onClick={() => setIsEditing(true)}
+                    onClick={() => {
+                      setIsEditing(true);
+                      setEditingId(null);
+                      setProductForm({ name: "", category: "", price: 0, image: "", description: "" });
+                      setImageFile(null);
+                    }}
                     className={`px-4 py-2 rounded-lg font-bold flex items-center gap-2 text-sm ${styles.bg} ${styles.hoverBg} transition-all`}
                   >
                     <Plus className="w-4 h-4" />
@@ -240,8 +286,28 @@ export default function AdminPage() {
                     </div>
                     
                     <div>
-                      <label className="block text-xs font-medium text-zinc-500 mb-1">URL de la Imagen</label>
-                      <input required type="url" value={productForm.image} onChange={e => setProductForm({...productForm, image: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm" placeholder="https://..." />
+                      <label className="block text-xs font-medium text-zinc-500 mb-1">Imagen del Producto</label>
+                      <div className="flex gap-2 items-center">
+                        <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
+                          <Upload className="w-4 h-4 text-zinc-400" />
+                          <span className="truncate max-w-[150px]">
+                            {imageFile ? imageFile.name : (productForm.image ? "Cambiar Imagen" : "Subir Foto (Supabase)")}
+                          </span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={e => {
+                              if (e.target.files && e.target.files[0]) {
+                                setImageFile(e.target.files[0]);
+                              }
+                            }}
+                          />
+                        </label>
+                        {productForm.image && !imageFile && (
+                          <img src={productForm.image} alt="preview" className="w-10 h-10 rounded-lg object-cover border border-zinc-200 dark:border-zinc-800 shrink-0" />
+                        )}
+                      </div>
                     </div>
                     
                     <div>
@@ -250,8 +316,8 @@ export default function AdminPage() {
                     </div>
                   </div>
                   
-                  <button type="submit" className={`mt-4 w-full py-3 rounded-lg font-bold ${styles.bg} ${styles.hoverBg} transition-colors`}>
-                    {editingId ? "Guardar Cambios" : "Agregar Producto"}
+                  <button type="submit" disabled={isUploading} className={`mt-4 w-full py-3 rounded-lg font-bold flex justify-center items-center gap-2 ${styles.bg} ${styles.hoverBg} transition-colors disabled:opacity-50`}>
+                    {isUploading ? <RefreshCw className="w-5 h-5 animate-spin" /> : (editingId ? "Guardar Cambios" : "Agregar Producto")}
                   </button>
                 </form>
               ) : (
