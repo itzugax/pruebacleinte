@@ -8,6 +8,18 @@ import { getThemeStyles } from "@/lib/theme";
 import { Product } from "@/data/mockProducts";
 import { supabase } from "@/lib/supabase";
 
+const PREDEFINED_CATEGORIES = [
+  "Franelas",
+  "Jeans",
+  "Gorras",
+  "Accesorios",
+  "Suéteres",
+  "Chaquetas",
+  "Zapatos",
+  "Shorts",
+  "Pantalones"
+];
+
 export default function AdminPage() {
   const store = useStore();
   const [mounted, setMounted] = useState(false);
@@ -21,12 +33,12 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [productForm, setProductForm] = useState({
     name: "",
-    category: "",
+    category: PREDEFINED_CATEGORIES[0],
     price: 0,
     image: "",
     description: "",
-    availableSizesStr: "",
-    outOfStockSizesStr: ""
+    allSizesStr: "",
+    outOfStockSizes: [] as string[]
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -67,14 +79,17 @@ export default function AdminPage() {
   const handleEditProduct = (p: Product) => {
     setIsEditing(true);
     setEditingId(p.id);
+    
+    const allSizes = [...(p.availableSizes || []), ...(p.outOfStockSizes || [])];
+    
     setProductForm({
       name: p.name,
-      category: p.category,
+      category: p.category || PREDEFINED_CATEGORIES[0],
       price: p.price,
       image: p.image,
       description: p.description,
-      availableSizesStr: p.availableSizes ? p.availableSizes.join(", ") : "",
-      outOfStockSizesStr: p.outOfStockSizes ? p.outOfStockSizes.join(", ") : ""
+      allSizesStr: allSizes.join(", "),
+      outOfStockSizes: p.outOfStockSizes || []
     });
     setImageFile(null);
   };
@@ -85,12 +100,22 @@ export default function AdminPage() {
     }
   };
 
+  const toggleOutOfStockSize = (size: string) => {
+    setProductForm(prev => {
+      const isOut = prev.outOfStockSizes.includes(size);
+      if (isOut) {
+        return { ...prev, outOfStockSizes: prev.outOfStockSizes.filter(s => s !== size) };
+      } else {
+        return { ...prev, outOfStockSizes: [...prev.outOfStockSizes, size] };
+      }
+    });
+  };
+
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     
     let imageUrl = productForm.image;
 
-    // Si el usuario seleccionó un archivo nuevo
     if (imageFile) {
       setIsUploading(true);
       const fileExt = imageFile.name.split('.').pop();
@@ -119,15 +144,15 @@ export default function AdminPage() {
       return;
     }
 
-    const availableSizes = productForm.availableSizesStr
+    // Parse sizes
+    const allSizes = productForm.allSizesStr
       .split(',')
       .map(s => s.trim())
       .filter(s => s.length > 0);
       
-    const outOfStockSizes = productForm.outOfStockSizesStr
-      .split(',')
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
+    // Filter out-of-stock sizes to only those that still exist in the text input
+    const outOfStockSizes = productForm.outOfStockSizes.filter(s => allSizes.includes(s));
+    const availableSizes = allSizes.filter(s => !outOfStockSizes.includes(s));
 
     const finalProduct: Product = { 
       id: editingId || "",
@@ -148,7 +173,7 @@ export default function AdminPage() {
     
     setIsEditing(false);
     setEditingId(null);
-    setProductForm({ name: "", category: "", price: 0, image: "", description: "", availableSizesStr: "", outOfStockSizesStr: "" });
+    setProductForm({ name: "", category: PREDEFINED_CATEGORIES[0], price: 0, image: "", description: "", allSizesStr: "", outOfStockSizes: [] });
     setImageFile(null);
   };
 
@@ -158,6 +183,9 @@ export default function AdminPage() {
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     p.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  
+  // Current sizes derived from input for toggling
+  const currentSizesArray = productForm.allSizesStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 p-4 sm:p-8">
@@ -262,7 +290,7 @@ export default function AdminPage() {
 
           <div className="space-y-8">
             {/* Gestión de Productos */}
-            <section className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 h-[800px] flex flex-col">
+            <section className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 h-[850px] flex flex-col">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold">Productos</h2>
                 {!isEditing && (
@@ -270,7 +298,7 @@ export default function AdminPage() {
                     onClick={() => {
                       setIsEditing(true);
                       setEditingId(null);
-                      setProductForm({ name: "", category: "", price: 0, image: "", description: "", availableSizesStr: "", outOfStockSizesStr: "" });
+                      setProductForm({ name: "", category: PREDEFINED_CATEGORIES[0], price: 0, image: "", description: "", allSizesStr: "", outOfStockSizes: [] });
                       setImageFile(null);
                     }}
                     className={`px-4 py-2 rounded-lg font-bold flex items-center gap-2 text-sm ${styles.bg} ${styles.hoverBg} transition-all`}
@@ -299,7 +327,16 @@ export default function AdminPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-medium text-zinc-500 mb-1">Categoría</label>
-                        <input required value={productForm.category} onChange={e => setProductForm({...productForm, category: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm" placeholder="Ej. Franelas" />
+                        <select 
+                          required 
+                          value={productForm.category} 
+                          onChange={e => setProductForm({...productForm, category: e.target.value})} 
+                          className="w-full px-3 py-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm"
+                        >
+                          {PREDEFINED_CATEGORIES.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-zinc-500 mb-1">Precio (USD)</label>
@@ -307,20 +344,42 @@ export default function AdminPage() {
                       </div>
                     </div>
                     
-                    {/* Campos de Tallas */}
-                    <div className="grid grid-cols-2 gap-4 p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
-                      <div className="col-span-2">
-                        <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Gestión de Tallas (Opcional)</p>
-                        <p className="text-[10px] text-zinc-400 mb-2">Si el producto no usa tallas, deja estos campos en blanco.</p>
-                      </div>
+                    {/* Campos de Tallas Interactivo */}
+                    <div className="flex flex-col gap-3 p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
                       <div>
-                        <label className="block text-xs font-medium text-green-600 dark:text-green-500 mb-1">Tallas Disponibles</label>
-                        <input value={productForm.availableSizesStr} onChange={e => setProductForm({...productForm, availableSizesStr: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm" placeholder="S, M, 32..." />
+                        <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1">Todas las tallas (Opcional)</p>
+                        <input 
+                          value={productForm.allSizesStr} 
+                          onChange={e => setProductForm({...productForm, allSizesStr: e.target.value})} 
+                          className="w-full px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm" 
+                          placeholder="S, M, L, XL..." 
+                        />
                       </div>
-                      <div>
-                        <label className="block text-xs font-medium text-red-500 mb-1">Tallas Agotadas</label>
-                        <input value={productForm.outOfStockSizesStr} onChange={e => setProductForm({...productForm, outOfStockSizesStr: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm" placeholder="L, XL, 34..." />
-                      </div>
+                      
+                      {currentSizesArray.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-zinc-500 mb-2">Marca las tallas agotadas (Click para tachar):</p>
+                          <div className="flex flex-wrap gap-2">
+                            {currentSizesArray.map(size => {
+                              const isOut = productForm.outOfStockSizes.includes(size);
+                              return (
+                                <button
+                                  key={size}
+                                  type="button"
+                                  onClick={() => toggleOutOfStockSize(size)}
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                                    isOut 
+                                      ? "bg-red-50 dark:bg-red-900/30 text-red-500 border-red-200 dark:border-red-800 line-through"
+                                      : "bg-green-50 dark:bg-green-900/30 text-green-600 border-green-200 dark:border-green-800"
+                                  }`}
+                                >
+                                  {size}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div>
