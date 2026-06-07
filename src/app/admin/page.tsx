@@ -348,6 +348,7 @@ export default function AdminPage() {
                     <div className="flex flex-col gap-3 p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
                       <div>
                         <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1">Todas las tallas (Opcional)</p>
+                        <p className="text-[10px] text-zinc-400 mb-2">Ingresa todas las tallas separadas por comas (Ej: S, M, L o 30, 32, 34)</p>
                         <input 
                           value={productForm.allSizesStr} 
                           onChange={e => setProductForm({...productForm, allSizesStr: e.target.value})} 
