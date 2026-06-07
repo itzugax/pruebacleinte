@@ -307,30 +307,6 @@ export default function AdminPage() {
               </div>
             </section>
 
-            {/* Tema de Colores */}
-            <section className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800">
-              <h2 className="text-xl font-bold mb-4">Tema de la Tienda</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
-                  { id: 'neutral', label: 'Neutral', colorClass: 'bg-zinc-900' },
-                  { id: 'pink', label: 'Rosado', colorClass: 'bg-pink-600' },
-                  { id: 'blue', label: 'Azul', colorClass: 'bg-blue-600' },
-                ].map((theme) => (
-                  <button
-                    key={theme.id}
-                    onClick={() => store.setThemeColor(theme.id as ThemeColor)}
-                    className={`p-3 rounded-xl border-2 flex items-center justify-between text-sm font-semibold transition-all ${
-                      store.themeColor === theme.id
-                        ? "border-zinc-900 dark:border-zinc-100 bg-zinc-50 dark:bg-zinc-950"
-                        : "border-zinc-200 dark:border-zinc-800 text-zinc-600 hover:border-zinc-300 dark:hover:border-zinc-700"
-                    }`}
-                  >
-                    {theme.label}
-                    <div className={`w-5 h-5 rounded-full ${theme.colorClass}`}></div>
-                  </button>
-                ))}
-              </div>
-            </section>
           </div>
 
           <div className="space-y-8">
