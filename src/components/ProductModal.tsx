@@ -46,7 +46,7 @@ export default function ProductModal({
     }
     text += `. Precio: ${priceText}`;
     
-    const url = `https://wa.me/584120000000?text=${encodeURIComponent(text)}`;
+    const url = `https://wa.me/584120856945?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
   };
 
